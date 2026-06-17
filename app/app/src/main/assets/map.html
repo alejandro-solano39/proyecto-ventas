@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<link rel="stylesheet" href="leaflet.css"/>
+<script src="leaflet.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body, #map { width: 100%; height: 100%; background: #aadaff; }
+  .leaflet-container { background: #aadaff; }
+  .hotel-pin {
+    color: white; border-radius: 50%;
+    width: 30px; height: 30px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: bold;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+    border: 2px solid white;
+  }
+</style>
+</head>
+<body>
+<div id="map"></div>
+<script>
+var map = L.map('map', {
+  zoomControl: true,
+  attributionControl: false
+}).setView([19.4284, -99.1953], 12);
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxZoom: 19,
+  subdomains: ['a','b','c']
+}).addTo(map);
+
+// El WebView suele inicializar el mapa antes de tener tamaño final.
+// invalidateSize fuerza a Leaflet a recalcular dimensiones y pedir los tiles correctos.
+function refreshSize() {
+  map.invalidateSize(true);
+}
+window.addEventListener('load', function() { setTimeout(refreshSize, 200); });
+window.addEventListener('resize', refreshSize);
+setTimeout(refreshSize, 600);
+setTimeout(refreshSize, 1500);
+
+var markers = [];
+
+function clearMarkers() {
+  markers.forEach(function(m) { map.removeLayer(m); });
+  markers = [];
+}
+
+function addMarker(lat, lng, title, snippet, index, visited) {
+  var bg = visited ? '#2E7D32' : '#1565C0';
+  var icon = L.divIcon({
+    className: '',
+    html: '<div class="hotel-pin" style="background:' + bg + ';">' + index + '</div>',
+    iconSize: [30, 30],
+    iconAnchor: [15, 15]
+  });
+  var m = L.marker([lat, lng], { icon: icon })
+    .addTo(map)
+    .bindPopup('<b>' + title + '</b><br><small>' + snippet + '</small>');
+  markers.push(m);
+}
+
+// Ajusta el zoom para que todos los marcadores sean visibles
+function fitMap() {
+  map.invalidateSize(true);
+  if (markers.length === 0) return;
+  var group = L.featureGroup(markers);
+  map.fitBounds(group.getBounds().pad(0.3));
+  setTimeout(function() { map.invalidateSize(true); }, 300);
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,43 @@
+# Node
+node_modules/
+npm-debug.log*
+.npm
+
+# Environment
+.env
+*.env.local
+*.env.*.local
+
+# Build outputs
+dist/
+build/
+.next/
+out/
+
+# Android
+app/.gradle/
+app/build/
+app/local.properties
+*.keystore
+*.jks
+*.apk
+*.aab
+
+# IDE
+.idea/
+*.iml
+.vscode/
+*.DS_Store
+
+# Logs
+logs/
+*.log
+
+# Temp files
+tmp/
+temp/
+*.tmp
+
+# Google credentials
+google-credentials.json
+service-account*.json
