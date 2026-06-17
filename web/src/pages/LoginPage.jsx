@@ -66,7 +66,7 @@ export default function LoginPage() {
 
           {error && (
             <div className="bg-rose-50 border border-rose-200 rounded-xl px-4 py-3 text-sm text-rose-700">
-              {error}
+              {typeof error === 'string' ? error : (error?.message ?? JSON.stringify(error))}
             </div>
           )}
 
