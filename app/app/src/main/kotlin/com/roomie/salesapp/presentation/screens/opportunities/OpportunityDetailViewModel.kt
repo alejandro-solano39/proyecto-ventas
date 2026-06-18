@@ -18,7 +18,9 @@ data class OpportunityDetailState(
     val isLoading: Boolean = true,
     val opportunity: OpportunityDetail? = null,
     val visit: VisitDto? = null,
-    val error: String? = null
+    val error: String? = null,
+    val isDeleting: Boolean = false,
+    val deleted: Boolean = false
 )
 
 @HiltViewModel
@@ -55,6 +57,22 @@ class OpportunityDetailViewModel @Inject constructor(
                 }
             } catch (e: Exception) {
                 _state.update { it.copy(isLoading = false, error = e.message) }
+            }
+        }
+    }
+
+    fun delete() {
+        viewModelScope.launch {
+            _state.update { it.copy(isDeleting = true) }
+            try {
+                val response = api.deleteOpportunity(opportunityId)
+                if (response.isSuccessful) {
+                    _state.update { it.copy(isDeleting = false, deleted = true) }
+                } else {
+                    _state.update { it.copy(isDeleting = false, error = "Error ${response.code()}") }
+                }
+            } catch (e: Exception) {
+                _state.update { it.copy(isDeleting = false, error = e.message) }
             }
         }
     }

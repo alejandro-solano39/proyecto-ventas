@@ -27,7 +27,9 @@ data class HotelDto(
     val latitude: Double,
     val longitude: Double,
     val stars: Int,
-    @SerializedName("avg_monthly_guests") val avgMonthlyGuests: Int
+    @SerializedName("avg_monthly_guests") val avgMonthlyGuests: Int,
+    // visited lo calcula el backend (true si el hotel tiene visitas en la BD)
+    val visited: Boolean = false
 )
 
 data class HotelsResponse(val hotels: List<HotelDto>)
@@ -114,5 +116,6 @@ fun HotelDto.toEntity() = Hotel(
     latitude = latitude,
     longitude = longitude,
     stars = stars,
-    avgMonthlyGuests = avgMonthlyGuests
+    avgMonthlyGuests = avgMonthlyGuests,
+    visited = visited
 )

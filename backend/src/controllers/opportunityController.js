@@ -12,13 +12,13 @@ async function getOpportunities(req, res, next) {
 
     const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
 
-    const countRow = queryOne(
+    const countRow = await queryOne(
       `SELECT COUNT(*) as count FROM opportunities o LEFT JOIN hotels h ON o.hotel_id = h.id ${where}`,
       params
     );
     const total = countRow ? countRow.count : 0;
 
-    const { rows } = query(
+    const { rows } = await query(
       `SELECT o.*, h.name AS hotel_name, h.city, u.name AS seller_name
        FROM opportunities o
        LEFT JOIN hotels h ON o.hotel_id = h.id
@@ -42,7 +42,7 @@ async function getOpportunities(req, res, next) {
 
 async function getOpportunityById(req, res, next) {
   try {
-    const row = queryOne(
+    const row = await queryOne(
       `SELECT o.*, h.name AS hotel_name, h.city, h.stars, u.name AS seller_name
        FROM opportunities o
        LEFT JOIN hotels h ON o.hotel_id = h.id
@@ -54,7 +54,7 @@ async function getOpportunityById(req, res, next) {
     if (!row) return res.status(404).json({ error: 'Oportunidad no encontrada' });
 
     const visit = row.visit_id
-      ? queryOne('SELECT * FROM visits WHERE id = ?', [row.visit_id])
+      ? await queryOne('SELECT * FROM visits WHERE id = ?', [row.visit_id])
       : null;
 
     res.json({
@@ -76,15 +76,15 @@ async function updateOpportunity(req, res, next) {
       return res.status(400).json({ error: `Etapa inválida. Valores: ${valid.join(', ')}` });
     }
 
-    const existing = queryOne('SELECT * FROM opportunities WHERE id = ?', [id]);
+    const existing = await queryOne('SELECT * FROM opportunities WHERE id = ?', [id]);
     if (!existing) return res.status(404).json({ error: 'Oportunidad no encontrada' });
 
-    query(
+    await query(
       `UPDATE opportunities SET
          stage = ?,
          next_action = ?,
          next_action_due_date = ?,
-         updated_at = datetime('now')
+         updated_at = now()
        WHERE id = ?`,
       [
         stage || existing.stage,
@@ -94,11 +94,24 @@ async function updateOpportunity(req, res, next) {
       ]
     );
 
-    const updated = queryOne('SELECT * FROM opportunities WHERE id = ?', [id]);
+    const updated = await queryOne('SELECT * FROM opportunities WHERE id = ?', [id]);
     res.json({ opportunity: { ...updated, products_mentioned: JSON.parse(updated.products_mentioned || '[]') } });
   } catch (err) {
     next(err);
   }
 }
 
-module.exports = { getOpportunities, getOpportunityById, updateOpportunity };
+async function deleteOpportunity(req, res, next) {
+  try {
+    const { id } = req.params;
+    const existing = await queryOne('SELECT id FROM opportunities WHERE id = ?', [id]);
+    if (!existing) return res.status(404).json({ error: 'Oportunidad no encontrada' });
+
+    await query('DELETE FROM opportunities WHERE id = ?', [id]);
+    res.status(204).send();
+  } catch (err) {
+    next(err);
+  }
+}
+
+module.exports = { getOpportunities, getOpportunityById, updateOpportunity, deleteOpportunity };

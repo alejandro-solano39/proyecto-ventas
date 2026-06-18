@@ -49,7 +49,8 @@ class VisitRepository @Inject constructor(
 
             val response = api.submitVisitReport(audioPart, hotelIdBody, notesBody)
             if (response.isSuccessful) {
-                // Marca el hotel como visitado en Room → la ruta y el progreso se actualizan solos (Flow)
+                // Marca optimista: la ruta se actualiza al instante. La visita ya quedó en la BD,
+                // así que el próximo syncHotels confirmará visited=true desde el backend (consistente con la web).
                 hotelDao.markVisited(hotelId)
                 Result.success(response.body()!!)
             } else {

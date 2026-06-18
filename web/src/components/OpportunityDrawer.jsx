@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import {
   X, Building2, User, Briefcase, MapPin, Calendar, Quote,
-  Package, ArrowRight, Flame, ThumbsUp, ThumbsDown, CalendarClock, Check,
+  Package, ArrowRight, Flame, ThumbsUp, ThumbsDown, CalendarClock, Check, Trash2,
 } from 'lucide-react';
 import { STAGES, SENTIMENTS, formatCurrency } from '../utils/constants';
-import { useOpportunityDetail, useUpdateOpportunity } from '../hooks/useOpportunities';
+import { useOpportunityDetail, useUpdateOpportunity, useDeleteOpportunity } from '../hooks/useOpportunities';
 
 const SENTIMENT_ICONS = { Flame, ThumbsUp, ThumbsDown, CalendarClock };
 
@@ -27,6 +28,7 @@ function Row({ icon: Icon, label, value }) {
 export default function OpportunityDrawer({ opportunityId, summary, onClose }) {
   const { data, isLoading } = useOpportunityDetail(opportunityId);
   const updateMutation = useUpdateOpportunity();
+  const deleteMutation = useDeleteOpportunity();
   const [stage, setStage] = useState(summary?.stage);
 
   useEffect(() => { setStage(summary?.stage); }, [summary?.stage, opportunityId]);
@@ -41,11 +43,16 @@ export default function OpportunityDrawer({ opportunityId, summary, onClose }) {
     if (stage && stage !== opp.stage) updateMutation.mutate({ id: opportunityId, stage });
   };
 
-  return (
+  const handleDelete = () => {
+    if (!window.confirm(`¿Eliminar la oportunidad de ${opp.hotel_name || 'este hotel'}? Esta acción no se puede deshacer.`)) return;
+    deleteMutation.mutate(opportunityId, { onSuccess: onClose });
+  };
+
+  return createPortal(
     <div className="fixed inset-0 z-50 flex justify-end">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-[fadeIn_0.2s_ease]"
+        className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-[fadeIn_0.2s_ease]"
         onClick={onClose}
       />
       {/* Panel */}
@@ -138,8 +145,18 @@ export default function OpportunityDrawer({ opportunityId, summary, onClose }) {
             </div>
           )}
 
-          {isLoading && !transcription && (
-            <p className="text-sm text-slate-400 text-center py-2">Cargando detalle…</p>
+          {/* Skeleton: reserva el espacio de la transcripción mientras carga, para evitar el salto de layout cuando llegue */}
+          {isLoading && !transcription && opp.visit_id && (
+            <div>
+              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                <Quote size={14} /> Lo que se dijo en la visita
+              </p>
+              <div className="bg-slate-50 rounded-xl p-4 border-l-4 border-brand-300 space-y-2 animate-pulse">
+                <div className="h-3 bg-slate-200 rounded w-full" />
+                <div className="h-3 bg-slate-200 rounded w-5/6" />
+                <div className="h-3 bg-slate-200 rounded w-2/3" />
+              </div>
+            </div>
           )}
 
           {/* Cambiar etapa */}
@@ -167,8 +184,21 @@ export default function OpportunityDrawer({ opportunityId, summary, onClose }) {
               </button>
             </div>
           </div>
+
+          {/* Eliminar oportunidad */}
+          <div className="border-t border-slate-100 pt-5">
+            <button
+              onClick={handleDelete}
+              disabled={deleteMutation.isPending}
+              className="inline-flex items-center gap-1.5 text-rose-600 hover:bg-rose-50 disabled:opacity-50 text-sm font-medium px-3 py-2 rounded-xl transition-colors"
+            >
+              <Trash2 size={15} />
+              {deleteMutation.isPending ? 'Eliminando…' : 'Eliminar oportunidad'}
+            </button>
+          </div>
         </div>
       </aside>
-    </div>
+    </div>,
+    document.body
   );
 }

@@ -9,7 +9,7 @@ async function login(req, res, next) {
       return res.status(400).json({ error: 'Email y contraseña requeridos' });
     }
 
-    const user = queryOne(
+    const user = await queryOne(
       'SELECT id, name, email, password_hash, role FROM users WHERE email = ?',
       [email.toLowerCase()]
     );
@@ -33,7 +33,7 @@ async function login(req, res, next) {
 
 async function getMe(req, res, next) {
   try {
-    const user = queryOne(
+    const user = await queryOne(
       'SELECT id, name, email, role, created_at FROM users WHERE id = ?',
       [req.user.id]
     );

@@ -29,7 +29,7 @@ async function submitVisitReport(req, res, next) {
       return res.status(400).json({ error: 'Se requiere audio o notas manuales' });
     }
 
-    const hotel = queryOne('SELECT id, name FROM hotels WHERE id = ?', [hotel_id]);
+    const hotel = await queryOne('SELECT id, name FROM hotels WHERE id = ?', [hotel_id]);
     if (!hotel) return res.status(404).json({ error: 'Hotel no encontrado' });
 
     let transcription = manual_notes || '';
@@ -42,13 +42,13 @@ async function submitVisitReport(req, res, next) {
     const extracted = await extractVisitInfo(transcription);
 
     const visitId = uuidv4();
-    query(
+    await query(
       'INSERT INTO visits (id, hotel_id, user_id, audio_transcription, manual_notes) VALUES (?,?,?,?,?)',
       [visitId, hotel_id, req.user.id, transcription, manual_notes || null]
     );
 
     const oppId = uuidv4();
-    query(
+    await query(
       `INSERT INTO opportunities
         (id, hotel_id, visit_id, user_id, contact_name, contact_role,
          products_mentioned, sentiment, estimated_monthly_value, stage, next_action)
@@ -64,7 +64,7 @@ async function submitVisitReport(req, res, next) {
       ]
     );
 
-    const opportunity = queryOne('SELECT * FROM opportunities WHERE id = ?', [oppId]);
+    const opportunity = await queryOne('SELECT * FROM opportunities WHERE id = ?', [oppId]);
     logger.info(`Oportunidad creada: ${oppId}`);
 
     res.status(201).json({

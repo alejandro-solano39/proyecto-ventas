@@ -38,12 +38,12 @@ async function run() {
   await initDb();
 
   if (process.argv.includes('--reset')) {
-    query('DELETE FROM opportunities WHERE visit_id IS NULL');
+    await query('DELETE FROM opportunities WHERE visit_id IS NULL');
     console.log('🗑️  Oportunidades demo previas eliminadas');
   }
 
-  const { rows: hotels } = query('SELECT id, name, city FROM hotels');
-  const { rows: users } = query("SELECT id FROM users WHERE role = 'seller' LIMIT 1");
+  const { rows: hotels } = await query('SELECT id, name, city FROM hotels');
+  const { rows: users } = await query("SELECT id FROM users WHERE role = 'seller' LIMIT 1");
   const userId = users[0]?.id;
   if (!hotels.length || !userId) {
     console.error('No hay hoteles o usuario vendedor. Corre primero: node src/db/seed.js');
@@ -60,7 +60,7 @@ async function run() {
     const daysAgo = Math.floor(Math.random() * 14);
     const created_at = isoDaysAgo(daysAgo);
 
-    query(
+    await query(
       `INSERT INTO opportunities
         (id, hotel_id, visit_id, user_id, contact_name, contact_role,
          products_mentioned, sentiment, estimated_monthly_value, stage, next_action, created_at, updated_at)

@@ -9,30 +9,17 @@ interface HotelDao {
     @Query("SELECT * FROM hotels WHERE city = :city ORDER BY name")
     fun getHotelsByCity(city: String): Flow<List<Hotel>>
 
-    // Inserta solo hoteles nuevos; IGNORE evita pisar el flag visited de los ya existentes
-    @Insert(onConflict = OnConflictStrategy.IGNORE)
-    suspend fun insertIgnore(hotels: List<Hotel>)
+    // El backend es la fuente de verdad: REPLACE sobrescribe los datos (incluido visited)
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsert(hotels: List<Hotel>)
 
-    // Actualiza datos del hotel SIN tocar visited (sincronización con el backend)
-    @Query("""
-        UPDATE hotels SET name = :name, city = :city, latitude = :lat,
-        longitude = :lng, stars = :stars, avgMonthlyGuests = :guests
-        WHERE id = :id
-    """)
-    suspend fun updateInfo(
-        id: String, name: String, city: String,
-        lat: Double, lng: Double, stars: Int, guests: Int
-    )
-
+    // Marca optimista local: refleja el visitado al instante hasta el próximo sync con el backend
     @Query("UPDATE hotels SET visited = 1 WHERE id = :hotelId")
     suspend fun markVisited(hotelId: String)
 
     @Transaction
     suspend fun syncAll(hotels: List<Hotel>) {
-        // Inserta los nuevos (sin tocar visited) y actualiza info de los existentes
-        insertIgnore(hotels)
-        hotels.forEach {
-            updateInfo(it.id, it.name, it.city, it.latitude, it.longitude, it.stars, it.avgMonthlyGuests)
-        }
+        // visited viene calculado del backend (true si el hotel tiene visitas en la BD)
+        upsert(hotels)
     }
 }

@@ -37,4 +37,9 @@ interface ApiService {
     suspend fun getOpportunityDetail(
         @Path("id") id: String
     ): Response<OpportunityDetailResponse>
+
+    @DELETE("opportunities/{id}")
+    suspend fun deleteOpportunity(
+        @Path("id") id: String
+    ): Response<Unit>
 }

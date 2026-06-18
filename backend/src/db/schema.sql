@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS users (
   email TEXT UNIQUE NOT NULL,
   password_hash TEXT NOT NULL,
   role TEXT DEFAULT 'seller' CHECK (role IN ('admin', 'seller')),
-  created_at TEXT DEFAULT (datetime('now'))
+  created_at TEXT DEFAULT (now())
 );
 
 CREATE TABLE IF NOT EXISTS hotels (
@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS hotels (
   longitude REAL NOT NULL,
   stars INTEGER CHECK (stars BETWEEN 1 AND 5),
   avg_monthly_guests INTEGER DEFAULT 0,
-  created_at TEXT DEFAULT (datetime('now'))
+  created_at TEXT DEFAULT (now())
 );
 
 CREATE TABLE IF NOT EXISTS visits (
@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS visits (
   user_id TEXT REFERENCES users(id),
   audio_transcription TEXT,
   manual_notes TEXT,
-  created_at TEXT DEFAULT (datetime('now'))
+  created_at TEXT DEFAULT (now())
 );
 
 CREATE TABLE IF NOT EXISTS opportunities (
@@ -40,6 +40,6 @@ CREATE TABLE IF NOT EXISTS opportunities (
   stage TEXT DEFAULT 'OPEN' CHECK (stage IN ('OPEN','CONTACTED','PROPOSAL_SENT','NEGOTIATION','CLOSED_WON','CLOSED_LOST')),
   next_action TEXT,
   next_action_due_date TEXT,
-  created_at TEXT DEFAULT (datetime('now')),
-  updated_at TEXT DEFAULT (datetime('now'))
+  created_at TEXT DEFAULT (now()),
+  updated_at TEXT DEFAULT (now())
 );

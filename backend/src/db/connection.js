@@ -1,60 +1,28 @@
-const initSqlJs = require('sql.js');
-const fs = require('node:fs');
-const path = require('node:path');
+const { Pool } = require('pg');
 
-const DB_PATH = path.join(__dirname, '../../data/ventas.db');
-const DATA_DIR = path.join(__dirname, '../../data');
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false },
+});
 
-if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
-
-let _db = null;
-
-// Guardar a disco después de cada escritura
-function persist(db) {
-  const data = db.export();
-  fs.writeFileSync(DB_PATH, Buffer.from(data));
+// Convierte placeholders estilo SQLite (?) a estilo Postgres ($1, $2, ...)
+function toPgPlaceholders(sql) {
+  let i = 0;
+  return sql.replaceAll('?', () => `$${++i}`);
 }
 
-async function getDb() {
-  if (_db) return _db;
-  const SQL = await initSqlJs();
-  if (fs.existsSync(DB_PATH)) {
-    const fileBuffer = fs.readFileSync(DB_PATH);
-    _db = new SQL.Database(fileBuffer);
-  } else {
-    _db = new SQL.Database();
-  }
-  return _db;
+async function query(sql, params = []) {
+  const { rows, rowCount } = await pool.query(toPgPlaceholders(sql), params);
+  return { rows, rowCount };
 }
 
-// Interfaz síncrona con helpers para SELECT y mutaciones
-function query(sql, params = []) {
-  if (!_db) throw new Error('DB no inicializada — llama a initDb() primero');
-
-  const verb = sql.trim().split(/\s+/)[0].toUpperCase();
-  if (verb === 'SELECT' || verb === 'WITH') {
-    const stmt = _db.prepare(sql);
-    stmt.bind(params);
-    const rows = [];
-    while (stmt.step()) rows.push(stmt.getAsObject());
-    stmt.free();
-    return { rows };
-  }
-
-  _db.run(sql, params);
-  persist(_db);
-  return { rows: [], rowCount: 1 };
-}
-
-// Equivalente a "get one row"
-function queryOne(sql, params = []) {
-  const { rows } = query(sql, params);
+async function queryOne(sql, params = []) {
+  const { rows } = await query(sql, params);
   return rows[0] || null;
 }
 
-// Inicializar DB (debe llamarse al arrancar el servidor)
 async function initDb() {
-  await getDb();
+  await pool.query('SELECT 1');
 }
 
-module.exports = { query, queryOne, initDb, get db() { return _db; } };
+module.exports = { query, queryOne, initDb };

@@ -33,3 +33,14 @@ export function useUpdateOpportunity() {
     },
   });
 }
+
+export function useDeleteOpportunity() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id) => api.delete(`/opportunities/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['opportunities'] });
+    },
+  });
+}

@@ -9,17 +9,18 @@ async function seed() {
   await initDb();
 
   const schema = fs.readFileSync(path.join(__dirname, 'schema.sql'), 'utf8');
-  schema.split(';').map(s => s.trim()).filter(Boolean).forEach(s => query(s));
+  const statements = schema.split(';').map(s => s.trim()).filter(Boolean);
+  for (const s of statements) await query(s);
   console.log('✅ Esquema creado');
 
   const passwordHash = bcrypt.hashSync('demo123', 10);
-  const insertUser = `INSERT OR IGNORE INTO users (id, name, email, password_hash, role) VALUES (?,?,?,?,?)`;
-  query(insertUser, [uuidv4(), 'Admin Demo',     'admin@ventas.com',    passwordHash, 'admin']);
-  query(insertUser, [uuidv4(), 'Vendedor Demo',  'vendedor@ventas.com', passwordHash, 'seller']);
+  const insertUser = `INSERT INTO users (id, name, email, password_hash, role) VALUES (?,?,?,?,?) ON CONFLICT (email) DO NOTHING`;
+  await query(insertUser, [uuidv4(), 'Admin Demo',     'admin@ventas.com',    passwordHash, 'admin']);
+  await query(insertUser, [uuidv4(), 'Vendedor Demo',  'vendedor@ventas.com', passwordHash, 'seller']);
   console.log('✅ Usuarios demo creados');
 
-  const insertHotel = `INSERT OR IGNORE INTO hotels (id,name,city,latitude,longitude,stars,avg_monthly_guests) VALUES (?,?,?,?,?,?,?)`;
-  [
+  const insertHotel = `INSERT INTO hotels (id,name,city,latitude,longitude,stars,avg_monthly_guests) VALUES (?,?,?,?,?,?,?) ON CONFLICT (id) DO NOTHING`;
+  const hotels = [
     // ─── Guadalajara ───
     ['h001','Hotel Presidente',           'Guadalajara', 20.6297, -103.3831, 5, 450],
     ['h002','Hotel Magno',                'Guadalajara', 20.634,  -103.382,  4, 350],
@@ -41,9 +42,10 @@ async function seed() {
     ['h016','Hotel Krystal Monterrey',    'Monterrey',   25.6866, -100.3161, 4, 320],
     ['h017','Hotel Safi Royal Luxury',    'Monterrey',   25.6520, -100.3680, 5, 410],
     ['h018','Hotel Fiesta Americana Pabellón','Monterrey',25.6700, -100.3090, 5, 450],
-  ].forEach(h => query(insertHotel, h));
+  ];
+  for (const h of hotels) await query(insertHotel, h);
   console.log('✅ Hoteles creados');
-  console.log('✅ Seed completado — BD lista en data/ventas.db');
+  console.log('✅ Seed completado en PostgreSQL');
 }
 
 seed().catch(console.error);
