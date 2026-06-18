@@ -1,0 +1,28 @@
+# Configuracion de despliegue del backend en Render.
+# Render lee este archivo automaticamente (Blueprint) al conectar el repo.
+services:
+  - type: web
+    name: ventas-backend
+    runtime: node
+    rootDir: backend
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      # Las siguientes se configuran como SECRETOS en el dashboard de Render
+      # (no se ponen aqui para no exponerlas en el repo):
+      #   DATABASE_URL    -> tu cadena de Supabase
+      #   JWT_SECRET      -> tu secreto JWT
+      #   GROQ_API_KEY    -> tu API key de Groq
+      #   ALLOWED_ORIGINS -> la URL de tu web en Vercel (ej: https://tu-app.vercel.app)
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: ALLOWED_ORIGINS
+        sync: false
