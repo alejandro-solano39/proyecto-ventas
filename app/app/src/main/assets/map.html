@@ -44,6 +44,12 @@ setTimeout(refreshSize, 1500);
 
 var markers = [];
 
+// Reencuadra el mapa al centro de una ciudad (salto inmediato, sin animación).
+function centerCity(lat, lng) {
+  map.invalidateSize(true);
+  map.setView([lat, lng], 12, { animate: false });
+}
+
 function clearMarkers() {
   markers.forEach(function(m) { map.removeLayer(m); });
   markers = [];
@@ -68,7 +74,14 @@ function fitMap() {
   map.invalidateSize(true);
   if (markers.length === 0) return;
   var group = L.featureGroup(markers);
-  map.fitBounds(group.getBounds().pad(0.3));
+  var bounds = group.getBounds();
+  // Sin animación: al cambiar de ciudad el mapa debe saltar de inmediato al nuevo encuadre.
+  if (markers.length === 1) {
+    // Un solo marcador: fitBounds no re-centra bien, usamos setView directo.
+    map.setView(markers[0].getLatLng(), 14, { animate: false });
+  } else {
+    map.fitBounds(bounds.pad(0.3), { animate: false });
+  }
   setTimeout(function() { map.invalidateSize(true); }, 300);
 }
 </script>

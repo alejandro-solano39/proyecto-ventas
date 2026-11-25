@@ -157,7 +157,7 @@ export default function OpportunityTable({ opportunities }) {
                 </td>
                 <td className="px-4 py-3 text-xs text-slate-600 max-w-[180px]">
                   {opp.next_action ? (
-                    <span className="inline-flex items-center gap-1.5">
+                    <span className="flex items-center gap-1.5 min-w-0">
                       <ArrowRight size={13} className="text-brand-500 shrink-0" />
                       <span className="truncate" title={opp.next_action}>{opp.next_action}</span>
                     </span>

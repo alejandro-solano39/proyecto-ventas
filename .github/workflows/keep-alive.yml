@@ -1,0 +1,24 @@
+# Mantiene despierto el backend en Render (plan free se duerme tras 15 min sin trafico
+# y la primera peticion tarda ~50 s). Hace ping a /health cada 10 min.
+#
+# Configuracion: GitHub > repo > Settings > Secrets and variables > Actions > Variables
+#   RENDER_URL = https://ventas-backend.onrender.com   (sin "/" al final)
+# Si RENDER_URL no esta definida, el job no hace nada.
+#
+# Nota: GitHub puede retrasar los cron unos minutos y los desactiva tras 60 dias sin
+# commits en el repo. Antes de una demo, abre <RENDER_URL>/health manualmente.
+name: Keep Render awake
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    if: ${{ vars.RENDER_URL != '' }}
+    steps:
+      - name: Ping /health
+        run: |
+          curl -fsS --max-time 90 --retry 2 "${{ vars.RENDER_URL }}/health"

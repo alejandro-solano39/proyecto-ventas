@@ -41,16 +41,27 @@ class AudioRecorder(private val context: Context) {
         return file
     }
 
+    /**
+     * Detiene y finaliza el archivo. Si stop() falla (grabación demasiado corta / sin frames),
+     * el .mp4 queda corrupto: devolvemos null para que la UI avise en vez de subir basura.
+     */
     fun stop(): File? {
+        val rec = recorder ?: return null
         return try {
-            recorder?.apply {
-                stop()
-                release()
+            rec.stop()
+            rec.release()
+            recorder = null
+            val file = outputFile
+            // Un .mp4 válido con audio pesa varios KB; si es minúsculo, la grabación no sirvió.
+            if (file != null && file.exists() && file.length() >= 2000) file else {
+                file?.delete()
+                null
             }
-            recorder = null
-            outputFile
         } catch (e: Exception) {
+            // stop() lanza si la grabación fue demasiado corta: el archivo es inservible
+            try { rec.release() } catch (_: Exception) {}
             recorder = null
+            outputFile?.delete()
             null
         }
     }

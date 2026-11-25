@@ -76,13 +76,24 @@ class VisitViewModel @Inject constructor(
     /** Detiene la grabación y transcribe el audio para que el usuario revise el texto. */
     fun stopRecording() {
         timerJob?.cancel()
-        audioRecorder.stop()
+        val seconds = _state.value.recordingSeconds
+        val audioFile = audioRecorder.stop()   // null si la grabación no sirvió
         _state.update { it.copy(isRecording = false) }
 
-        val audioFile = _state.value.audioFile
-        if (audioFile != null && audioFile.exists()) {
-            transcribeRecording(audioFile)
+        // Grabación demasiado corta o archivo inservible: avisa en vez de transcribir silencio.
+        if (audioFile == null || seconds < 1) {
+            _state.update {
+                it.copy(
+                    audioFile = null,
+                    submitState = SubmitState.Error(
+                        "La grabación fue muy corta. Mantén presionado y habla al menos 2 segundos."
+                    )
+                )
+            }
+            return
         }
+        _state.update { it.copy(audioFile = audioFile) }
+        transcribeRecording(audioFile)
     }
 
     private fun transcribeRecording(audioFile: File) {

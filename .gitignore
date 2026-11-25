@@ -41,3 +41,6 @@ temp/
 # Google credentials
 google-credentials.json
 service-account*.json
+
+# Respaldos locales (pueden contener secretos)
+*.bak

@@ -46,6 +46,13 @@ import com.roomie.salesapp.presentation.theme.Green600
 import com.roomie.salesapp.presentation.theme.Indigo700
 import com.roomie.salesapp.presentation.theme.Indigo900
 
+// Centro aproximado de cada ciudad, para reencuadrar el mapa al cambiar de ciudad.
+private val CITY_CENTERS = mapOf(
+    "Guadalajara" to (20.6597 to -103.3496),
+    "CDMX" to (19.4326 to -99.1332),
+    "Monterrey" to (25.6866 to -100.3161),
+)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RouteScreen(
@@ -150,6 +157,7 @@ fun RouteScreen(
                                 LeafletMapView(
                                     hotels = visibleHotels,
                                     selectedHotel = state.selectedHotel,
+                                    selectedCity = state.selectedCity,
                                     onMarkerClick = { viewModel.selectHotel(it) },
                                     modifier = Modifier
                                         .fillMaxWidth()
@@ -410,11 +418,23 @@ private fun StarFilterChip(label: String, selected: Boolean, onClick: () -> Unit
 fun LeafletMapView(
     hotels: List<Hotel>,
     selectedHotel: Hotel?,
+    selectedCity: String,
     onMarkerClick: (Hotel) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val webViewRef = remember { mutableStateOf<WebView?>(null) }
     val mapReady = remember { mutableStateOf(false) }
+
+    // Al cambiar de ciudad, salta de inmediato a su centro (no espera a que lleguen los marcadores,
+    // así el mapa nunca se queda mostrando la ciudad anterior).
+    LaunchedEffect(selectedCity, mapReady.value) {
+        if (!mapReady.value) return@LaunchedEffect
+        val center = CITY_CENTERS[selectedCity] ?: return@LaunchedEffect
+        val webView = webViewRef.value ?: return@LaunchedEffect
+        webView.post {
+            webView.evaluateJavascript("centerCity(${center.first}, ${center.second});", null)
+        }
+    }
 
     // Inyectar marcadores cuando el mapa está listo y hay hoteles
     LaunchedEffect(hotels, mapReady.value, selectedHotel) {
